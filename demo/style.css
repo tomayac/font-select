@@ -1,0 +1,12 @@
+body {
+  font-family: system-ui;
+  margin: 2em;
+}
+
+h1 {
+  color: #373fff;
+}
+
+font-select {
+  outline: solid 1px pink;
+}

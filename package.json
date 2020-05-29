@@ -1,0 +1,28 @@
+{
+  "name": "font-select",
+  "version": "1.0.0",
+  "description": "Custom element for picking local fonts",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx http-server",
+    "lint": "npx prettier --write"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomayac/font-select.git"
+  },
+  "keywords": [
+    "local",
+    "fonts"
+  ],
+  "author": "Thomas Steiner (tomac@google.com)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/tomayac/font-select/issues"
+  },
+  "homepage": "https://github.com/tomayac/font-select#readme",
+  "devDependencies": {
+    "http-server": "^0.12.3",
+    "prettier": "^2.0.5"
+  }
+}
