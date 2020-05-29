@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx http-server",
-    "lint": "npx prettier --write"
+    "lint": "npx prettier --write ."
   },
   "repository": {
     "type": "git",

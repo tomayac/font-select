@@ -8,5 +8,10 @@ h1 {
 }
 
 font-select {
-  outline: solid 1px pink;
+  margin-block-end: 1rem;
+}
+
+.preview {
+  padding: 0.25rem;
+  border: solid 1px FieldText;
 }
