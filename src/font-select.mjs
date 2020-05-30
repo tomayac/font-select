@@ -47,7 +47,7 @@ const installBoolReflection = (obj, attrName, propName = attrName) => {
   });
 };
 
-const DEBUG = true;
+const DEBUG = false;
 
 // Observed attributes
 const AUTOFOCUS = 'autofocus';
@@ -68,6 +68,8 @@ const UL = 'ul';
 const BUTTON = 'button';
 const INPUT = 'input';
 const HIGHLIGHT = 'highlight';
+const OPTION = 'option';
+const VARIATION = 'variation';
 const CHANGE = 'change';
 const GRANTED = 'granted';
 const LOCAL_FONTS = 'local-fonts';
@@ -132,7 +134,11 @@ template.innerHTML = `
 
     .variation {
       display: block;
+      position: initial;
+      overflow-y: initial;
       border: none;
+      width: 100%;
+      padding-inline-start: 1em;
     }
 
     li {
@@ -159,7 +165,8 @@ template.innerHTML = `
     }
 
     button:focus,
-    input:focus {
+    input:focus,
+    ul:focus {
       outline: none;
     }
 
@@ -185,7 +192,9 @@ template.innerHTML = `
       appearance: none;
       width: 0.5em;
       height: 0.5em;
-      background-image: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text fill=%22GrayText%22 y=%22100%22 font-size=%22250%22>⨯</text></svg>");
+      background-image: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><text text-anchor=%22middle%22 fill=%22GrayText%22 x=%225%22 y=%220.5em%22 font-size=%221em%22>⨯</text></svg>");
+      background-size: 0.75em;
+      background-position: center;
     }
 
     button::before {
@@ -375,6 +384,7 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList.addEventListener('pointerdown', (e) => {
       this._log('Font preview list', e);
       const clickedFontPreviewItem = e.target;
+      console.log(clickedFontPreviewItem.nodeName.toLowerCase())
       if (clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
         return;
       }
@@ -429,6 +439,7 @@ export class FontSelect extends HTMLElement {
         return;
       }
       e.preventDefault();
+
       if (code === ESCAPE) {
         this._fontFamilyInput.focus();
         if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'true') {
@@ -438,6 +449,7 @@ export class FontSelect extends HTMLElement {
         this.value = '';
         return this._showFontPreview();
       }
+
       const visibleFontPreviewItems = this._getVisibleFontPreviewItems();
       if (code === ENTER || code === NUMPAD_ENTER) {
         if (visibleFontPreviewItems[this._index]) {
@@ -453,31 +465,48 @@ export class FontSelect extends HTMLElement {
         }
         return this._hideFontPreview();
       }
+
       const numVisible = visibleFontPreviewItems.length;
       this._hover = false;
-      if (code === ARROW_DOWN) {
-        this._index = ++this._index % numVisible;
-      } else {
-        this._index = this._index > 0 ? --this._index : numVisible - 1;
-      }
-      this._fontFamilyInput.removeAttribute(ARIA_ACTIVEDESCENDENT);
-      visibleFontPreviewItems.forEach((fontPreviewItem, i) => {
-        if (this._index === i) {
-          fontPreviewItem.scrollIntoView({ block: 'nearest' });
-          this._fontFamilyInput.setAttribute(
-            ARIA_ACTIVEDESCENDENT,
-            fontPreviewItem.querySelector(SUMMARY).textContent
-          );
-          return fontPreviewItem.classList.add(HIGHLIGHT);
+      if (code === ARROW_UP || code === ARROW_DOWN) {
+        if (code === ARROW_DOWN) {
+          this._index = ++this._index % numVisible;
+        } else {
+          this._index = this._index > 0 ? --this._index : numVisible - 1;
         }
-        fontPreviewItem.classList.remove(HIGHLIGHT);
-      });
+        this._fontFamilyInput.removeAttribute(ARIA_ACTIVEDESCENDENT);
+        visibleFontPreviewItems.forEach((fontPreviewItem, i) => {
+          if (this._index === i) {
+            fontPreviewItem.scrollIntoView({ block: 'nearest' });
+            this._fontFamilyInput.setAttribute(
+              ARIA_ACTIVEDESCENDENT,
+              fontPreviewItem.querySelector(SUMMARY).textContent
+            );
+            return fontPreviewItem.classList.add(HIGHLIGHT);
+          }
+          fontPreviewItem.classList.remove(HIGHLIGHT);
+        });
+        return;
+      }
+
+      if (code === ARROW_LEFT || code === ARROW_RIGHT) {
+        visibleFontPreviewItems.forEach((fontPreviewItem, i) => {
+          if (this._index === i) {
+            const details = fontPreviewItem.querySelector(DETAILS);
+            if (code === ARROW_RIGHT) {
+              return details.open = true;
+            }
+            details.open = false;
+          }
+        });
+      }
     });
 
     this._fontFamilyInput.addEventListener(INPUT, (e) => {
       this._log('Font family input', e);
       const value = this._fontFamilyInput.value;
       if (!value) {
+        this.value = '';
         return this._showFontPreview();
       }
       this._filterFontPreview(value);
@@ -511,8 +540,8 @@ export class FontSelect extends HTMLElement {
         const details = DOCUMENT.createElement(DETAILS);
         const summary = DOCUMENT.createElement(SUMMARY);
         const ul = DOCUMENT.createElement(UL);
-        ul.className = 'variation';
-        li.role = 'option';
+        ul.className = VARIATION;
+        li.role = OPTION;
         summary.textContent = fontFamily;
         summary.style.fontFamily = fontFamily;
         details.append(summary);
@@ -541,7 +570,8 @@ export class FontSelect extends HTMLElement {
           })
           .forEach((font) => {
             const detailsLi = DOCUMENT.createElement(LI);
-            detailsLi.className = 'variation';
+            detailsLi.className = VARIATION;
+            detailsLi.style.fontFamily = font.fullName;
             ul.append(detailsLi);
             detailsLi.textContent = font.variationName;
 
