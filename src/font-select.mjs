@@ -163,25 +163,29 @@ template.innerHTML = `
       outline: none;
     }
 
-    input[aria-expanded=true]  {
-      box-shadow: inset 1px -1px 0 #e57576,
-                  inset 0px 1px 0 #e57576;
-    }
-
-    button[aria-expanded=true] {
-      box-shadow: inset 0px -1px 0 #e57576,
-                  inset 0px 1px 0 #e57576,
-                  inset -1px 0px 0 #e57576;
+    div[part=wrapper]:focus-within {
+      outline: auto 2px -webkit-focus-ring-color;
+      outline-offset: -2px;
     }
 
     button {
       appearance: none;
       border-right: 2px inset;
       border-bottom: 2px inset;
-      border-left: solid 1px inset;
+      border-left: none;
       border-top: 2px inset;
       height: var(--input-height);
       width: var(--input-height);
+      overflow: hidden;
+    }
+
+    input::-webkit-search-cancel-button {
+      position:relative;
+      right: -0.25em;
+      appearance: none;
+      width: 0.5em;
+      height: 0.5em;
+      background-image: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text fill=%22GrayText%22 y=%22100%22 font-size=%22250%22>⨯</text></svg>");
     }
 
     button::before {
@@ -189,7 +193,7 @@ template.innerHTML = `
       color: GrayText;
       display: inline-block;
       position: relative;
-      top: -0.25rem;
+      top: -0.3em;
     }
 
     button[aria-expanded=true]::before {
@@ -198,6 +202,12 @@ template.innerHTML = `
 
     button[aria-expanded=false]::before {
       transform: rotate(90deg);
+    }
+
+    div[part=wrapper] {
+      display: inline-flex;
+      align-items: center;
+      margin-inline-end: 0.25em;
     }
 
     div[part=font-family] {
@@ -212,12 +222,14 @@ template.innerHTML = `
   </style>
 
   <div part="font-family">
-    <input part="font-family-input" id="family" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete">
-    <button tabindex="-1" aria-label="${FONT_FAMILIES}" aria-expanded="false" aria-controls="autocomplete"></button>
+    <div part="wrapper">
+      <input part="font-family-input" id="family" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete">
+      <button tabindex="-1" aria-label="${FONT_FAMILIES}" aria-expanded="false" aria-controls="autocomplete"></button>
+    </div>
     <label part="font-family-label" for="family">${FONT_FAMILY}</label>
   </div>
   <div class="spacer"></div>
-  <ul part="font-family-preview" id="autocomplete" role="listbox" aria-label="${FONT_FAMILIES}"></ul>`;
+  <ul tabindex="-1" part="font-family-preview" id="autocomplete" role="listbox" aria-label="${FONT_FAMILIES}"></ul>`;
 
 export class FontSelect extends HTMLElement {
   static get observedAttributes() {
@@ -294,6 +306,7 @@ export class FontSelect extends HTMLElement {
   }
 
   _hideFontPreview() {
+    this._log('Hide');
     this._index = -1;
     this.style.height = 'var(--input-height)';
     this._fontFamilyInput.setAttribute(ARIA_EXPANDED, false);
@@ -314,6 +327,7 @@ export class FontSelect extends HTMLElement {
   async _initializeDOM() {
     this._index = -1;
     this._hover = false;
+    this._closedWithButton = false;
 
     this._shadowRoot = this.attachShadow({ mode: 'closed' });
     this._shadowRoot.append(template.content.cloneNode(true));
@@ -327,22 +341,32 @@ export class FontSelect extends HTMLElement {
     }
 
     this._fontFamilyButton.addEventListener('click', (e) => {
+      console.log('click')
       this._log('Font family button', e);
+      console.log(this._fontFamilyButton.getAttribute(ARIA_EXPANDED), typeof this._fontFamilyButton.getAttribute(ARIA_EXPANDED))
       if (this._fontFamilyButton.getAttribute(ARIA_EXPANDED) === 'false') {
+        console.log('was closed, opening')
+        this._closedWithButton = false;
         return this._fontFamilyInput.focus();
       }
+      this._closedWithButton = true;
+      console.log('was open, closing');
       this._hideFontPreview();
     });
 
     this._fontFamilyInput.addEventListener('focus', async (e) => {
       this._log('Font family input', e);
       if (await this._requestPermission()) {
-        return this._showFontPreview();
+        if (!this._closedWithButton) {
+          this._closedWithButton = false;
+          return this._showFontPreview();
+        }
+        this._closedWithButton = false;
       }
     });
 
     this._fontFamilyInput.addEventListener('blur', (e) => {
-      this._log('Font family input', e);
+      this._log('blur Font family input', e);
       if (!this._hover) {
         this._hideFontPreview();
       }
@@ -407,7 +431,7 @@ export class FontSelect extends HTMLElement {
       e.preventDefault();
       if (code === ESCAPE) {
         this._fontFamilyInput.focus();
-        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED === 'true')) {
+        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'true') {
           return this._hideFontPreview();
         }
         this._fontFamilyInput.value = '';
