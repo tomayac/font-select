@@ -59,13 +59,11 @@ const DISABLED = 'disabled';
 const REGULAR = 'Regular';
 const FONT_FAMILY = 'Font Family';
 const FONT_FAMILIES = 'Font Families';
-const FONT_VARIATION = 'Font Variation';
 
 // Other strings
-const OPTION = 'option';
-const OPTGROUP = 'optgroup';
 const LI = 'li';
-const SELECT = 'select';
+const DETAILS = 'details';
+const SUMMARY = 'summary';
 const UL = 'ul';
 const BUTTON = 'button';
 const INPUT = 'input';
@@ -83,6 +81,8 @@ const ARIA_ACTIVEDESCENDENT = 'aria-activedescendant';
 // Keys
 const ARROW_DOWN = 'ArrowDown';
 const ARROW_UP = 'ArrowUp';
+const ARROW_LEFT = 'ArrowLeft';
+const ARROW_RIGHT = 'ArrowRight';
 const ESCAPE = 'Escape';
 const ENTER = 'Enter';
 const NUMPAD_ENTER = 'NumpadEnter';
@@ -116,23 +116,23 @@ template.innerHTML = `
       display: none;
     }
 
-    optgroup[disabled] {
-      display: none;
-    }
-
     ul {
-      color: WindowText;
-      background-color: Window;
+      color: CanvasText;
+      background-color: Canvas;
       position: absolute;
       margin: 0;
       list-style: none;
       padding-inline-start: 0.25em;
-      margin-block: 0;
       overflow-y: scroll;
       max-height: var(--autocomplete-height);
       max-width: 100%;
       width: max-content;
       border: solid 1px FieldText;
+    }
+
+    .variation {
+      display: block;
+      border: none;
     }
 
     li {
@@ -144,14 +144,14 @@ template.innerHTML = `
     button {
       font-size: inherit;
       padding: 0.25rem;
-      background-color: Window;
-      color: WindowText;
+      background-color: Canvas;
+      color: CanvasText;
     }
 
     input {
       height: var(--input-height);
       margin-inline-end: -1px;
-      border-radius: 0px;
+      border-radius: 0;
       border-top: 2px inset;
       border-right: none;
       border-bottom: 2px inset;
@@ -178,30 +178,32 @@ template.innerHTML = `
       appearance: none;
       border-right: 2px inset;
       border-bottom: 2px inset;
-      border-left: none;
+      border-left: solid 1px inset;
       border-top: 2px inset;
       height: var(--input-height);
       width: var(--input-height);
     }
 
+    button::before {
+      content: "▸";
+      color: GrayText;
+      display: inline-block;
+      position: relative;
+      top: -0.25rem;
+    }
+
     button[aria-expanded=true]::before {
-      content: "";
-      transform: rotate(90deg);
+      transform: rotate(-90deg);
     }
 
     button[aria-expanded=false]::before {
-      content: "";
       transform: rotate(90deg);
     }
 
     div[part=font-family] {
       display: inline-flex;
-      align-items: center;
-    }
-
-    div[part=container] {
-      display: inline-flex;
       position: absolute;
+      align-items: center;
     }
 
     .highlight {
@@ -209,14 +211,12 @@ template.innerHTML = `
     }
   </style>
 
-  <div part="container">
-    <div part="font-family">
-      <input part="font-family-input" id="family" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete">
-      <button tabindex="-1" aria-label="${FONT_FAMILIES}" aria-expanded="false" aria-controls="autocomplete"></button>
-      <label part="font-family-label" for="family">${FONT_FAMILY}</label>
-      <select part="font-variation-select" id="variation"></select>
-    </div>
+  <div part="font-family">
+    <input part="font-family-input" id="family" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete">
+    <button tabindex="-1" aria-label="${FONT_FAMILIES}" aria-expanded="false" aria-controls="autocomplete"></button>
+    <label part="font-family-label" for="family">${FONT_FAMILY}</label>
   </div>
+  <div class="spacer"></div>
   <ul part="font-family-preview" id="autocomplete" role="listbox" aria-label="${FONT_FAMILIES}"></ul>`;
 
 export class FontSelect extends HTMLElement {
@@ -226,6 +226,7 @@ export class FontSelect extends HTMLElement {
 
   constructor() {
     super();
+
     installBoolReflection(this, DISABLED);
     installBoolReflection(this, MULTIPLE);
     installBoolReflection(this, AUTOFOCUS);
@@ -234,7 +235,7 @@ export class FontSelect extends HTMLElement {
     this._initializeDOM();
   }
 
-  _log (message, event = '') {
+  _log(message, event = '') {
     if (DEBUG) {
       console.log(message, event);
     }
@@ -249,30 +250,28 @@ export class FontSelect extends HTMLElement {
       }
       return true;
     } catch (err) {
-      this._throwIfNotTypeError(err);
-    }
-  }
-
-  _throwIfNotTypeError(err) {
-    if (err.name !== TYPE_ERROR) {
+      // This simply means the permission isn't implemented yet.
+      if (err.name === TYPE_ERROR) {
+        return true;
+      }
       throw err;
     }
   }
 
   _filterFontPreview(value, exactMatch = false) {
     const lowerCaseValue = value.toLowerCase();
-    let hasMatches = false;
+    let noneMatches = true;
     this._fontPreviewList.fontPreviewItems.forEach((fontPreviewItem) => {
       const matches = exactMatch
         ? fontPreviewItem.textContent.toLowerCase() === lowerCaseValue
         : fontPreviewItem.textContent.toLowerCase().includes(lowerCaseValue);
       if (matches) {
-        hasMatches = true;
+        noneMatches = false;
         return (fontPreviewItem.style.display = BLOCK);
       }
       fontPreviewItem.style.display = NONE;
     });
-    if (!hasMatches) {
+    if (noneMatches) {
       this._hideFontPreview();
     }
   }
@@ -281,8 +280,9 @@ export class FontSelect extends HTMLElement {
     if (!this._fontPreviewList.fontPreviewItems) {
       return;
     }
-    this._fontPreviewList.style.top = this.getBoundingClientRect.bottom;
+    this._log('Show');
     this._index = -1;
+    this._fontPreviewList.style.top = this.getBoundingClientRect.bottom;
     this.style.height = 'var(--element-height)';
     this._fontFamilyInput.setAttribute(ARIA_EXPANDED, true);
     this._fontFamilyButton.setAttribute(ARIA_EXPANDED, true);
@@ -316,16 +316,11 @@ export class FontSelect extends HTMLElement {
     this._hover = false;
 
     this._shadowRoot = this.attachShadow({ mode: 'closed' });
-    this._shadowRoot.appendChild(template.content.cloneNode(true));
+    this._shadowRoot.append(template.content.cloneNode(true));
 
-    this._fontVariationSelect = this._shadowRoot.querySelector(SELECT);
     this._fontFamilyInput = this._shadowRoot.querySelector(INPUT);
     this._fontFamilyButton = this._shadowRoot.querySelector(BUTTON);
     this._fontPreviewList = this._shadowRoot.querySelector(UL);
-    this._container = this._shadowRoot.querySelector('[part=container]')
-
-    this._fontVariationSelect.multiple = this.multiple;
-    this._fontVariationSelect.disabled = true;
 
     if (!('fonts' in NAVIGATOR)) {
       return;
@@ -341,16 +336,9 @@ export class FontSelect extends HTMLElement {
 
     this._fontFamilyInput.addEventListener('focus', async (e) => {
       this._log('Font family input', e);
-      try {
-        if (
-          (await PERMISSIONS.query({ name: LOCAL_FONTS })).state !== GRANTED
-        ) {
-          this._fontVariationSelect.disabled = await this._requestPermission();
-        }
-      } catch (err) {
-        this._throwIfNotTypeError(err);
+      if (await this._requestPermission()) {
+        return this._showFontPreview();
       }
-      this._showFontPreview();
     });
 
     this._fontFamilyInput.addEventListener('blur', (e) => {
@@ -363,13 +351,13 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList.addEventListener('pointerdown', (e) => {
       this._log('Font preview list', e);
       const clickedFontPreviewItem = e.target;
-      if (clickedFontPreviewItem.nodeName.toLowerCase() !== LI) {
+      if (clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
         return;
       }
-      clickedFontPreviewItem.setAttribute(ARIA_SELECTED, true);
-      this._fontFamilyInput.value = clickedFontPreviewItem.textContent;
-      this._fontFamilyInput.dispatchEvent(new Event(INPUT));
-      this._fontFamilyInput.dispatchEvent(new Event(CHANGE));
+      clickedFontPreviewItem.closest(LI).setAttribute(ARIA_SELECTED, true);
+      const value = clickedFontPreviewItem.textContent;
+      this._fontFamilyInput.value = value;
+      this.value = value;
       this._hideFontPreview();
     });
 
@@ -382,17 +370,18 @@ export class FontSelect extends HTMLElement {
       this._log('Font preview list', e);
       this._hover = true;
       const hoveredFontPreviewItem = e.target;
-      if (hoveredFontPreviewItem.nodeName.toLowerCase() !== LI) {
+      if (hoveredFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
         return;
       }
       const visibleFontPreviewItems = this._getVisibleFontPreviewItems();
       this._fontFamilyInput.removeAttribute(ARIA_ACTIVEDESCENDENT);
       visibleFontPreviewItems.forEach((fontPreviewItem, i) => {
-        if (fontPreviewItem === hoveredFontPreviewItem) {
+        const summary = fontPreviewItem.querySelector(SUMMARY);
+        if (summary === hoveredFontPreviewItem) {
           this._index = i;
           this._fontFamilyInput.setAttribute(
             ARIA_ACTIVEDESCENDENT,
-            fontPreviewItem.textContent
+            summary.textContent
           );
           return fontPreviewItem.classList.add(HIGHLIGHT);
         }
@@ -403,7 +392,15 @@ export class FontSelect extends HTMLElement {
     this._fontFamilyInput.addEventListener('keydown', (e) => {
       this._log('Font family input', e);
       const code = e.code;
-      const allowed = [ARROW_DOWN, ARROW_UP, ESCAPE, ENTER, NUMPAD_ENTER];
+      const allowed = [
+        ARROW_DOWN,
+        ARROW_UP,
+        ARROW_LEFT,
+        ARROW_RIGHT,
+        ESCAPE,
+        ENTER,
+        NUMPAD_ENTER,
+      ];
       if (!allowed.includes(code)) {
         return;
       }
@@ -424,11 +421,12 @@ export class FontSelect extends HTMLElement {
             ARIA_SELECTED,
             true
           );
-          this._fontFamilyInput.value =
-            visibleFontPreviewItems[this._index].textContent;
+          const value = visibleFontPreviewItems[this._index].querySelector(
+            SUMMARY
+          ).textContent;
+          this._fontFamilyInput.value = value;
+          this.value = value;
         }
-        this._fontFamilyInput.dispatchEvent(new Event(INPUT));
-        this._fontFamilyInput.dispatchEvent(new Event(CHANGE));
         return this._hideFontPreview();
       }
       const numVisible = visibleFontPreviewItems.length;
@@ -444,7 +442,7 @@ export class FontSelect extends HTMLElement {
           fontPreviewItem.scrollIntoView({ block: 'nearest' });
           this._fontFamilyInput.setAttribute(
             ARIA_ACTIVEDESCENDENT,
-            fontPreviewItem.textContent
+            fontPreviewItem.querySelector(SUMMARY).textContent
           );
           return fontPreviewItem.classList.add(HIGHLIGHT);
         }
@@ -455,23 +453,10 @@ export class FontSelect extends HTMLElement {
     this._fontFamilyInput.addEventListener(INPUT, (e) => {
       this._log('Font family input', e);
       const value = this._fontFamilyInput.value;
-      this._fontVariationSelect.selectedIndex = -1;
       if (!value) {
-        this._showFontPreview();
-        this._fontVariationSelect.optgroups.forEach((optgroup) => {
-          optgroup.disabled = true;
-        });
-        return (this._fontVariationSelect.disabled = true);
+        return this._showFontPreview();
       }
       this._filterFontPreview(value);
-      this._fontVariationSelect.optgroups.forEach((optgroup) => {
-        if (optgroup.label === value) {
-          optgroup.disabled = false;
-          optgroup.firstChild.selected = true;
-        } else {
-          optgroup.disabled = true;
-        }
-      });
     });
 
     this._fontFamilyInput.addEventListener(CHANGE, (e) => {
@@ -485,23 +470,6 @@ export class FontSelect extends HTMLElement {
         return (this._fontFamilyInput.value = '');
       }
       this._filterFontPreview(value, true);
-      this._fontVariationSelect.disabled = false;
-
-      if (
-        this._fontVariationSelect.selectedOptions[0].parentElement
-          .childElementCount > 1
-      ) {
-        this._fontVariationSelect.focus();
-      }
-      this._fontVariationSelect.dispatchEvent(new Event(CHANGE));
-    });
-
-    this._fontVariationSelect.addEventListener(CHANGE, (e) => {
-      this._log('Font variation select', e);
-      if (!this._fontVariationSelect.selectedOptions.length) {
-        return;
-      }
-      this.value = this._fontVariationSelect.selectedOptions[0].value;
     });
 
     const fonts = {};
@@ -515,13 +483,17 @@ export class FontSelect extends HTMLElement {
     Object.keys(fonts)
       .sort()
       .forEach((fontFamily) => {
-        const optgroup = DOCUMENT.createElement(OPTGROUP);
-        optgroup.label = fontFamily;
-        optgroup.disabled = true;
         const li = DOCUMENT.createElement(LI);
-        li.role = OPTION;
-        li.textContent = fontFamily;
-        li.style.fontFamily = fontFamily;
+        const details = DOCUMENT.createElement(DETAILS);
+        const summary = DOCUMENT.createElement(SUMMARY);
+        const ul = DOCUMENT.createElement(UL);
+        ul.className = 'variation';
+        li.role = 'option';
+        summary.textContent = fontFamily;
+        summary.style.fontFamily = fontFamily;
+        details.append(summary);
+        details.append(ul);
+        li.append(details);
         this._fontPreviewList.append(li);
         fonts[fontFamily]
           .map((font) => {
@@ -544,36 +516,31 @@ export class FontSelect extends HTMLElement {
             return 0;
           })
           .forEach((font) => {
-            const option = DOCUMENT.createElement(OPTION);
-            option.text = font.variationName;
-            option.value = font.fullName;
-            option.dataset.postscriptName = font.postscriptName;
-            optgroup.append(option);
+            const detailsLi = DOCUMENT.createElement(LI);
+            detailsLi.className = 'variation';
+            ul.append(detailsLi);
+            detailsLi.textContent = font.variationName;
 
             styleSheet.insertRule(`
-          @font-face {
-            font-family: '${font.fullName}';
-            src: local('${font.fullName}'),
-                 local('${font.postscriptName}');
-          }`);
+              @font-face {
+                font-family: '${font.fullName}';
+                src: local('${font.fullName}'),
+                    local('${font.postscriptName}');
+              }`);
           });
-        this._fontVariationSelect.append(optgroup);
       });
-    this._fontVariationSelect.optgroups = this._fontVariationSelect.querySelectorAll(
-      OPTGROUP
-    );
     this._fontPreviewList.fontPreviewItems = Array.from(
-      this._fontPreviewList.querySelectorAll(LI)
+      this._fontPreviewList.querySelectorAll(`${LI}:not(.variation)`)
     );
     DOCUMENT.adoptedStyleSheets = [...DOCUMENT.adoptedStyleSheets, styleSheet];
 
     const { x, y, width, height } = this.getBoundingClientRect();
-    const spacer = DOCUMENT.createElement('div');
+    const spacer = this._shadowRoot.querySelector('.spacer');
     spacer.style.width = `${width}px`;
     spacer.style.height = `${height}px`;
     spacer.style.left = `${x}px`;
     spacer.style.top = `${y}px`;
-    this._container.insertAdjacentElement('afterend', spacer);
+
     this.style.display = 'initial';
 
     this._fontFamilyInput.disabled = this.disabled ? true : false;
@@ -585,19 +552,21 @@ export class FontSelect extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    this._log('Attribute changed', `${name}: from "${oldValue}" to "${newValue}"`);
+    this._log(
+      'Attribute changed',
+      `${name}: from "${oldValue}" to "${newValue}"`
+    );
     if (name === AUTOFOCUS) {
       if (this.autofocus) {
         this._fontFamilyInput.focus();
       }
     } else if (name === DISABLED) {
       this._fontFamilyInput.disabled = this.disabled;
-      this._fontVariationSelect.disabled = this.disabled;
     } else if (name === VALUE) {
       const customEvent = new CustomEvent(CHANGE, {
         detail: newValue,
       });
-      this._log('Font select', customEvent)
+      this._log('Font select', customEvent);
       this.dispatchEvent(customEvent);
     }
   }
