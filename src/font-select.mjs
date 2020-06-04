@@ -285,11 +285,10 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList
       .querySelectorAll(`.${FAMILY}`)
       .forEach((fontPreviewItem) => {
-        console.log(fontPreviewItem.textContent.toLowerCase())
-        const current = fontPreviewItem.querySelector(SUMMARY).textContent.toLowerCase();
+        const value = fontPreviewItem.dataset.value.toLowerCase();
         const matches = exactMatch
-          ? current === lowerCaseValue
-          : current.includes(lowerCaseValue);
+          ? value === lowerCaseValue
+          : value.includes(lowerCaseValue);
         if (matches) {
           noMatches = false;
           return (fontPreviewItem.hidden = false);
@@ -484,9 +483,7 @@ export class FontSelect extends HTMLElement {
         const selectedFontPreviewItem = visibleFontPreviewItems[this._index];
         if (selectedFontPreviewItem) {
           selectedFontPreviewItem.setAttribute(ARIA_SELECTED, true);
-          const value = selectedFontPreviewItem.classList.contains(FAMILY)
-            ? selectedFontPreviewItem.querySelector(SUMMARY).textContent
-            : selectedFontPreviewItem.dataset.fontFamily;
+          const value = selectedFontPreviewItem.dataset.value;
           this._fontFamilyInput.value = value;
           this.value = value;
         }
@@ -510,9 +507,7 @@ export class FontSelect extends HTMLElement {
             fontPreviewItem.scrollIntoView({ block: 'nearest' });
             this._fontFamilyInput.setAttribute(
               ARIA_ACTIVEDESCENDENT,
-              fontPreviewItem.classList.contains(FAMILY)
-                ? fontPreviewItem.querySelector(SUMMARY).textContent
-                : fontPreviewItem.dataset.fontFamily
+              fontPreviewItem.dataset.value
             );
             return fontPreviewItem.classList.add(HIGHLIGHT);
           }
@@ -596,6 +591,7 @@ export class FontSelect extends HTMLElement {
         }
         const li = DOCUMENT.createElement(LI);
         li.className = FAMILY;
+        li.dataset.value = fontFamily;
         const details = DOCUMENT.createElement(DETAILS);
         const summary = DOCUMENT.createElement(SUMMARY);
         const ul = DOCUMENT.createElement(UL);
@@ -632,7 +628,7 @@ export class FontSelect extends HTMLElement {
             detailsLi.className = VARIATION;
             detailsLi.role = OPTION;
             detailsLi.style.fontFamily = font.fullName;
-            detailsLi.dataset.fontFamily = font.fullName;
+            detailsLi.dataset.value = font.fullName;
             detailsLi.hidden = true;
             detailsLi.textContent = font.variationName;
             ul.append(detailsLi);
@@ -653,12 +649,12 @@ export class FontSelect extends HTMLElement {
     spacer.style.height = 'var(--input-height)';
     spacer.style.left = `${x}px`;
     spacer.style.top = `${y}px`;
+    this.style.display = 'initial';
 
     const { width: inputWidth } = this._shadowRoot
       .querySelector('[part="wrapper"]')
       .getBoundingClientRect();
     this._fontPreviewList.style.width = `${inputWidth}px`;
-    this.style.display = 'initial';
 
     this._fontFamilyInput.disabled = this.disabled ? true : false;
     if (this.autofocus) {
