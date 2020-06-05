@@ -65,6 +65,7 @@ const LI = 'li';
 const DETAILS = 'details';
 const SUMMARY = 'summary';
 const UL = 'ul';
+const SPAN = 'span';
 const BUTTON = 'button';
 const INPUT = 'input';
 const HIGHLIGHT = 'highlight';
@@ -74,8 +75,6 @@ const VARIATION = 'variation';
 const CHANGE = 'change';
 const GRANTED = 'granted';
 const LOCAL_FONTS = 'local-fonts';
-const NONE = 'none';
-const BLOCK = 'block';
 const TYPE_ERROR = 'TypeError';
 const KEY_DOWN = 'keydown';
 const ARIA_EXPANDED = 'aria-expanded';
@@ -97,6 +96,7 @@ const NAVIGATOR = navigator;
 const PERMISSIONS = NAVIGATOR.permissions;
 
 const template = DOCUMENT.createElement('template');
+// eslint-disable max-len
 template.innerHTML = `
   <style>
     *,
@@ -144,6 +144,7 @@ template.innerHTML = `
     li {
       user-select: none;
       cursor: default;
+      white-space: nowrap;
     }
 
     input,
@@ -232,19 +233,56 @@ template.innerHTML = `
 
   <div part="font-family">
     <div part="wrapper">
-      <input part="font-family-input" id="family" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="autocomplete">
-      <button tabindex="-1" aria-label="${FONT_FAMILIES}" aria-expanded="false" aria-controls="autocomplete"></button>
+      <input
+        part="font-family-input"
+        id="family"
+        type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="autocomplete"
+      >
+      <button
+        tabindex="-1"
+        aria-label="${FONT_FAMILIES}"
+        aria-expanded="false"
+        aria-controls="autocomplete"
+      ></button>
     </div>
     <label part="font-family-label" for="family">${FONT_FAMILY}</label>
   </div>
   <div class="spacer"></div>
-  <ul tabindex="-1" part="font-family-preview" id="autocomplete" role="listbox" aria-label="${FONT_FAMILIES}"></ul>`;
+  <ul
+    tabindex="-1"
+    part="font-family-preview"
+    id="autocomplete"
+    role="listbox"
+    aria-label="${FONT_FAMILIES}"
+  ></ul>`;
 
+/**
+ *
+ *
+ * @export
+ * @class FontSelect
+ * @extends {HTMLElement}
+ */
 export class FontSelect extends HTMLElement {
+  /**
+   *
+   *
+   * @readonly
+   * @static
+   * @memberof FontSelect
+   */
   static get observedAttributes() {
     return [AUTOFOCUS, MULTIPLE, DISABLED, VALUE];
   }
 
+  /**
+   *Creates an instance of FontSelect.
+   * @memberof FontSelect
+   */
   constructor() {
     super();
 
@@ -256,12 +294,26 @@ export class FontSelect extends HTMLElement {
     this._initializeDOM();
   }
 
+  /**
+   *
+   *
+   * @param {*} message
+   * @param {string} [event='']
+   * @return {undefined}
+   * @memberof FontSelect
+   */
   _log(message, event = '') {
     if (DEBUG) {
       console.log(message, event);
     }
   }
 
+  /**
+   *
+   *
+   * @return {bool}
+   * @memberof FontSelect
+   */
   async _requestPermission() {
     try {
       if (
@@ -279,6 +331,13 @@ export class FontSelect extends HTMLElement {
     }
   }
 
+  /**
+   *
+   *
+   * @param {*} value
+   * @param {boolean} [exactMatch=false]
+   * @memberof FontSelect
+   */
   _filterFontPreview(value, exactMatch = false) {
     const lowerCaseValue = value.toLowerCase();
     let noMatches = true;
@@ -300,6 +359,12 @@ export class FontSelect extends HTMLElement {
     }
   }
 
+  /**
+   *
+   *
+   * @return {undefined}
+   * @memberof FontSelect
+   */
   _showFontPreview() {
     const fontPreviewItems = this._fontPreviewList.querySelectorAll(
       `.${FAMILY}`
@@ -321,6 +386,11 @@ export class FontSelect extends HTMLElement {
     });
   }
 
+  /**
+   *
+   *
+   * @memberof FontSelect
+   */
   _hideFontPreview() {
     this._log('Hide');
     this._index = -1;
@@ -337,6 +407,12 @@ export class FontSelect extends HTMLElement {
     });
   }
 
+  /**
+   *
+   *
+   * @return {Array}
+   * @memberof FontSelect
+   */
   _getVisibleFontPreviewItems() {
     return Array.from(this._fontPreviewList.querySelectorAll(LI)).filter(
       (fontPreviewItem) => {
@@ -345,6 +421,12 @@ export class FontSelect extends HTMLElement {
     );
   }
 
+  /**
+   *
+   *
+   * @return {undefined}
+   * @memberof FontSelect
+   */
   async _initializeDOM() {
     this._index = -1;
     this._hover = false;
@@ -362,19 +444,12 @@ export class FontSelect extends HTMLElement {
     }
 
     this._fontFamilyButton.addEventListener('click', (e) => {
-      console.log('click');
       this._log('Font family button', e);
-      console.log(
-        this._fontFamilyButton.getAttribute(ARIA_EXPANDED),
-        typeof this._fontFamilyButton.getAttribute(ARIA_EXPANDED)
-      );
       if (this._fontFamilyButton.getAttribute(ARIA_EXPANDED) === 'false') {
-        console.log('was closed, opening');
         this._closedWithButton = false;
         return this._fontFamilyInput.focus();
       }
       this._closedWithButton = true;
-      console.log('was open, closing');
       this._hideFontPreview();
     });
 
@@ -399,7 +474,7 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList.addEventListener('pointerdown', (e) => {
       this._log('Font preview list', e);
       const clickedFontPreviewItem = e.target;
-      console.log(clickedFontPreviewItem.nodeName.toLowerCase());
+      console.log(clickedFontPreviewItem.nodeName);
       if (clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
         return;
       }
@@ -461,13 +536,11 @@ export class FontSelect extends HTMLElement {
       if (code === ARROW_UP || code === ARROW_DOWN) {
         if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'false') {
           this._index = -1;
-          console.log('Value ', this._fontFamilyInput.value)
           this._showFontPreview();
           this._filterFontPreview(this._fontFamilyInput.value);
         }
       }
       e.preventDefault();
-      console.log(this._index);
       if (code === ESCAPE) {
         this._fontFamilyInput.focus();
         if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'true') {
@@ -491,9 +564,6 @@ export class FontSelect extends HTMLElement {
       }
 
       const numVisible = visibleFontPreviewItems.length;
-
-      console.log(visibleFontPreviewItems);
-      console.log('Visible', numVisible);
       this._hover = false;
       if (code === ARROW_UP || code === ARROW_DOWN) {
         if (code === ARROW_DOWN) {
@@ -524,6 +594,9 @@ export class FontSelect extends HTMLElement {
           if (this._index === i) {
             if (code === ARROW_RIGHT) {
               const details = fontPreviewItem.querySelector(DETAILS);
+              if (!details) {
+                return;
+              }
               details.open = true;
               details.querySelectorAll(LI).forEach((fontFamilyPreviewItem) => {
                 fontFamilyPreviewItem.hidden = false;
@@ -585,19 +658,18 @@ export class FontSelect extends HTMLElement {
     }
     Object.keys(fonts)
       .sort()
-      .forEach((fontFamily, fuck) => {
-        if (fuck > 2) {
-          return;
-        }
+      .forEach((fontFamily) => {
         const li = DOCUMENT.createElement(LI);
         li.className = FAMILY;
         li.dataset.value = fontFamily;
         const details = DOCUMENT.createElement(DETAILS);
         const summary = DOCUMENT.createElement(SUMMARY);
+        const span = DOCUMENT.createElement(SPAN);
+        summary.append(span);
         const ul = DOCUMENT.createElement(UL);
         ul.className = VARIATION;
         li.role = OPTION;
-        summary.textContent = fontFamily;
+        span.textContent = fontFamily;
         summary.style.fontFamily = fontFamily;
         details.append(summary);
         details.append(ul);
@@ -664,6 +736,14 @@ export class FontSelect extends HTMLElement {
     this._shadowRoot.adoptedStyleSheets = [styleSheet];
   }
 
+  /**
+   *
+   *
+   * @param {*} name
+   * @param {*} oldValue
+   * @param {*} newValue
+   * @memberof FontSelect
+   */
   attributeChangedCallback(name, oldValue, newValue) {
     this._log(
       'Attribute changed',

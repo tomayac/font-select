@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "npx http-server",
-    "lint": "npx prettier --write ."
+    "lint": "npx eslint . --ext .js,.mjs --fix --ignore-pattern dist/",
+    "prettier": "npx prettier --write ."
   },
   "repository": {
     "type": "git",
@@ -22,7 +23,21 @@
   },
   "homepage": "https://github.com/tomayac/font-select#readme",
   "devDependencies": {
+    "eslint": "^7.1.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^6.11.0",
     "http-server": "^0.12.3",
-    "prettier": "^2.0.5"
+    "prettier": "^2.0.5",
+    "terser": "^4.7.0"
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 2020,
+      "sourceType": "module"
+    },
+    "extends": [
+      "google",
+      "prettier"
+    ]
   }
 }
