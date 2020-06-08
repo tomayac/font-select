@@ -1,4 +1,3 @@
-;
 const onChange = (e) => {
   const target = e.target;
   console.log('🤖 Value changed to', target.value);

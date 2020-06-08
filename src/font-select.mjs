@@ -47,8 +47,6 @@ const installBoolReflection = (obj, attrName, propName = attrName) => {
   });
 };
 
-const DEBUG = false;
-
 // Observed attributes
 const AUTOFOCUS = 'autofocus';
 const MULTIPLE = 'multiple';
@@ -79,6 +77,12 @@ const TYPE_ERROR = 'TypeError';
 const KEY_DOWN = 'keydown';
 const FALSE_STRING = 'false';
 const TRUE_STRING = 'true';
+const CLICK = 'click';
+const FOCUS = 'focus';
+const BLUR = 'blur';
+const POINTERDOWN = 'pointerdown';
+const POINTEROVER = 'pointerover';
+const POINTEROUT = 'pointerout';
 
 // ARIA
 const ARIA_EXPANDED = 'aria-expanded';
@@ -341,7 +345,8 @@ export class FontSelect extends HTMLElement {
           : value.includes(lowerCaseValue);
         if (matches) {
           noMatches = false;
-          return (fontPreviewItem.hidden = false);
+          fontPreviewItem.hidden = false;
+          return;
         }
         fontPreviewItem.hidden = true;
       });
@@ -368,7 +373,6 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList.hidden = false;
     fontPreviewItems.forEach((fontPreviewItem) => {
       fontPreviewItem.hidden = false;
-      fontPreviewItem.classList.remove(HIGHLIGHT);
     });
   }
 
@@ -427,7 +431,7 @@ export class FontSelect extends HTMLElement {
       return;
     }
 
-    this._fontFamilyButton.addEventListener('click', (e) => {
+    this._fontFamilyButton.addEventListener(CLICK, (e) => {
       if (this._fontFamilyButton.getAttribute(ARIA_EXPANDED) === FALSE_STRING) {
         this._closedWithButton = false;
         return this._fontFamilyInput.focus();
@@ -436,7 +440,7 @@ export class FontSelect extends HTMLElement {
       this._hideFontPreview();
     });
 
-    this._fontFamilyInput.addEventListener('focus', async (e) => {
+    this._fontFamilyInput.addEventListener(FOCUS, async (e) => {
       if (await this._requestPermission()) {
         if (!this._closedWithButton) {
           this._closedWithButton = false;
@@ -446,23 +450,21 @@ export class FontSelect extends HTMLElement {
       }
     });
 
-    this._fontFamilyInput.addEventListener('blur', (e) => {
+    this.addEventListener(BLUR, (e) => {
       if (!this._hover) {
+        this._closedWithButton = false;
         this._hideFontPreview();
       }
     });
 
-    this._fontPreviewList.addEventListener('pointerdown', (e) => {
+    this._fontPreviewList.addEventListener(POINTERDOWN, (e) => {
       let clickedFontPreviewItem = e.target;
-      if (
-        clickedFontPreviewItem.nodeName.toLowerCase() !== SPAN &&
-        clickedFontPreviewItem.nodeName.toLowerCase() !== LI &&
-        clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY
-      ) {
+      const nodeName = clickedFontPreviewItem.nodeName.toLowerCase();
+      if (![SPAN, LI, SUMMARY].includes(nodeName)) {
         return;
       }
       e.preventDefault();
-      if (clickedFontPreviewItem.nodeName.toLowerCase() === SUMMARY) {
+      if (nodeName === SUMMARY) {
         const details = clickedFontPreviewItem.closest(DETAILS);
         if (!details) {
           return;
@@ -480,18 +482,15 @@ export class FontSelect extends HTMLElement {
       this._hideFontPreview();
     });
 
-    this._fontPreviewList.addEventListener('pointerout', (e) => {
+    this._fontPreviewList.addEventListener(POINTEROUT, (e) => {
       this._hover = false;
     });
 
-    this._fontPreviewList.addEventListener('pointerover', (e) => {
+    this._fontPreviewList.addEventListener(POINTEROVER, (e) => {
       this._hover = true;
       let hoveredFontPreviewItem = e.target;
-      if (
-        hoveredFontPreviewItem.nodeName.toLowerCase() !== SUMMARY &&
-        hoveredFontPreviewItem.nodeName.toLowerCase() !== SPAN &&
-        hoveredFontPreviewItem.nodeName.toLowerCase() !== LI
-      ) {
+      const nodeName = hoveredFontPreviewItem.nodeName.toLowerCase();
+      if (![SPAN, LI, SUMMARY].includes(nodeName)) {
         return;
       }
       const visibleFontPreviewItems = this._getVisibleFontPreviewItems();
@@ -512,31 +511,38 @@ export class FontSelect extends HTMLElement {
 
     this._fontFamilyInput.addEventListener(KEY_DOWN, (e) => {
       const code = e.code;
-      const allowed = [
-        ARROW_DOWN,
-        ARROW_UP,
-        ARROW_LEFT,
-        ARROW_RIGHT,
-        ESCAPE,
-        ENTER,
-        NUMPAD_ENTER,
-      ];
-      if (!allowed.includes(code)) {
+      if (
+        ![
+          ARROW_DOWN,
+          ARROW_UP,
+          ARROW_LEFT,
+          ARROW_RIGHT,
+          ESCAPE,
+          ENTER,
+          NUMPAD_ENTER,
+        ].includes(code)
+      ) {
         return;
       }
+
       if (code === ARROW_LEFT || code === ARROW_RIGHT) {
         if (this._index === -1) {
           return;
         }
       }
+
       if (code === ARROW_UP || code === ARROW_DOWN) {
-        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === FALSE_STRING) {
+        if (
+          this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === FALSE_STRING
+        ) {
           this._index = -1;
           this._showFontPreview();
           this._filterFontPreview(this._fontFamilyInput.value);
         }
       }
+
       e.preventDefault();
+
       if (code === ESCAPE) {
         this._fontFamilyInput.focus();
         if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === TRUE_STRING) {
@@ -628,20 +634,6 @@ export class FontSelect extends HTMLElement {
       this._filterFontPreview(value);
     });
 
-    this._fontFamilyInput.addEventListener(CHANGE, (e) => {
-      const value = this._fontFamilyInput.value;
-      if (!Object.keys(fonts).includes(value)) {
-        this._fontPreviewList
-          .querySelectorAll(LI)
-          .forEach((fontPreviewItem) => {
-            fontPreviewItem.setAttribute(ARIA_SELECTED, false);
-          });
-        this.value = '';
-        return (this._fontFamilyInput.value = '');
-      }
-      this._filterFontPreview(value, true);
-    });
-
     const fonts = {};
     const styleSheet = new CSSStyleSheet();
     for await (const metadata of NAVIGATOR.fonts.query()) {
@@ -657,6 +649,7 @@ export class FontSelect extends HTMLElement {
         li.className = FAMILY;
         li.dataset.value = fontFamily;
         const details = DOCUMENT.createElement(DETAILS);
+        details.tabIndex = -1;
         const summary = DOCUMENT.createElement(SUMMARY);
         const span = DOCUMENT.createElement(SPAN);
         summary.append(span);
