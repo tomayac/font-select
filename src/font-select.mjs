@@ -127,6 +127,13 @@ template.innerHTML = `
       display: none;
     }
 
+    :host([disabled]),
+    input[disabled] {
+      cursor: not-allowed;
+      pointer-events: none;
+      color: GrayText;
+    }
+
     ul {
       color: CanvasText;
       background-color: Canvas;
@@ -257,7 +264,6 @@ template.innerHTML = `
         aria-controls="autocomplete"
       ></button>
     </div>
-    <label part="font-family-label" for="family">${FONT_FAMILY}</label>
   </div>
   <div class="spacer"></div>
   <ul
@@ -407,6 +413,24 @@ export class FontSelect extends HTMLElement {
         return !fontPreviewItem.hidden;
       }
     );
+  }
+
+  /**
+   *
+   *
+   * @param {*} value
+   * @return {boolean}
+   * @memberof FontSelect
+   */
+  _checkFontValue(value) {
+    let valid = false;
+    this._fontPreviewList.querySelectorAll(LI).forEach((fontPreviewItem) => {
+      if (value === fontPreviewItem.dataset.value) {
+        fontPreviewItem.setAttribute(ARIA_SELECTED, true);
+        valid = true;
+      }
+    });
+    return valid;
   }
 
   /**
@@ -740,10 +764,13 @@ export class FontSelect extends HTMLElement {
     } else if (name === DISABLED) {
       this._fontFamilyInput.disabled = this.disabled;
     } else if (name === VALUE) {
+      if (this._checkFontValue(newValue)) {
+      this._fontFamilyInput.value = newValue;
       const customEvent = new CustomEvent(CHANGE, {
         detail: newValue,
       });
       this.dispatchEvent(customEvent);
+    }
     }
   }
 }
