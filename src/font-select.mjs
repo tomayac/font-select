@@ -186,11 +186,6 @@ template.innerHTML = `
       outline: none;
     }
 
-    div[part=wrapper]:focus-within {
-      outline: auto 2px -webkit-focus-ring-color;
-      outline-offset: -2px;
-    }
-
     button {
       appearance: none;
       border-right: 2px inset;
@@ -229,16 +224,19 @@ template.innerHTML = `
       background-position: center;
     }
 
-    div[part=wrapper] {
-      display: inline-flex;
-      align-items: center;
-      margin-inline-end: 0.25em;
-    }
-
-    div[part=font-family] {
+    [part=font-family] {
       display: inline-flex;
       position: absolute;
       align-items: center;
+    }
+
+    [part=font-family]:focus-within {
+      outline: auto 2px -webkit-focus-ring-color;
+      outline-offset: -2px;
+    }
+
+    .spacer {
+      display: inline-block;
     }
 
     .highlight {
@@ -247,23 +245,21 @@ template.innerHTML = `
   </style>
 
   <div part="font-family">
-    <div part="wrapper">
-      <input
-        part="font-family-input"
-        id="family"
-        type="search"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded="false"
-        aria-controls="autocomplete"
-      >
-      <button
-        tabindex="-1"
-        aria-label="${FONT_FAMILIES}"
-        aria-expanded="false"
-        aria-controls="autocomplete"
-      ></button>
-    </div>
+    <input
+      part="font-family-input"
+      id="family"
+      type="search"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-expanded="false"
+      aria-controls="autocomplete"
+    >
+    <button
+      tabindex="-1"
+      aria-label="${FONT_FAMILIES}"
+      aria-expanded="false"
+      aria-controls="autocomplete"
+    ></button>
   </div>
   <div class="spacer"></div>
   <ul
@@ -368,12 +364,14 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   _showFontPreview() {
+    const { x, width, bottom } = this._wrapper.getBoundingClientRect();
+    this._fontPreviewList.style.width = `${width}px`;
+    this._fontPreviewList.style.left = `${x}px`;
+    this._fontPreviewList.style.top = `calc(${bottom}px - 1px)`;
     const fontPreviewItems = this._fontPreviewList.querySelectorAll(
       `.${FAMILY}`
     );
     this._index = -1;
-    const { y } = this.getBoundingClientRect();
-    this._fontPreviewList.style.top = `calc(${y}px + var(--input-height))`;
     this._fontFamilyInput.setAttribute(ARIA_EXPANDED, true);
     this._fontFamilyButton.setAttribute(ARIA_EXPANDED, true);
     this._fontPreviewList.hidden = false;
@@ -450,6 +448,7 @@ export class FontSelect extends HTMLElement {
     this._fontFamilyInput = this._shadowRoot.querySelector(INPUT);
     this._fontFamilyButton = this._shadowRoot.querySelector(BUTTON);
     this._fontPreviewList = this._shadowRoot.querySelector(UL);
+    this._wrapper = this._shadowRoot.querySelector('[part="font-family"]');
 
     if (!('fonts' in NAVIGATOR)) {
       return;
@@ -726,18 +725,14 @@ export class FontSelect extends HTMLElement {
       });
     DOCUMENT.adoptedStyleSheets = [...DOCUMENT.adoptedStyleSheets, styleSheet];
 
-    const { x, y, width } = this.getBoundingClientRect();
+    const { x, y, width, height } = this._wrapper.getBoundingClientRect();
     const spacer = this._shadowRoot.querySelector('.spacer');
     spacer.style.width = `${width}px`;
-    spacer.style.height = 'var(--input-height)';
+    spacer.style.height = `${height}px`;
     spacer.style.left = `${x}px`;
     spacer.style.top = `${y}px`;
-    this.style.display = 'initial';
 
-    const { width: inputWidth } = this._shadowRoot
-      .querySelector('[part="wrapper"]')
-      .getBoundingClientRect();
-    this._fontPreviewList.style.width = `${inputWidth}px`;
+    this.style.display = 'initial';
 
     this._fontFamilyInput.disabled = this.disabled ? true : false;
 
@@ -745,6 +740,11 @@ export class FontSelect extends HTMLElement {
       this._fontFamilyInput.blur();
       this._fontFamilyInput.focus();
     }
+
+    if (this.value) {
+      this._checkFontValue(this.value);
+    }
+
     this._shadowRoot.adoptedStyleSheets = [styleSheet];
   }
 
@@ -757,6 +757,7 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   attributeChangedCallback(name, oldValue, newValue) {
+    console.log('attributeChangedCallback', name, oldValue, newValue)
     if (name === AUTOFOCUS) {
       if (this.autofocus) {
         this._fontFamilyInput.focus();
