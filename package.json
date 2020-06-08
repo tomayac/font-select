@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npx http-server",
     "lint": "npx eslint . --ext .js,.mjs --fix --ignore-pattern dist/",
-    "prettier": "npx prettier --write ."
+    "fix": "npx prettier --write ."
   },
   "repository": {
     "type": "git",

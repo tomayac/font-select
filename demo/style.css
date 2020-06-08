@@ -1,6 +1,12 @@
+html {
+  display: flex;
+  justify-content: center;
+}
+
 body {
   font-family: system-ui;
   margin: 2em;
+  max-width: 60ch;
 }
 
 h1 {
@@ -9,12 +15,12 @@ h1 {
 
 font-select {
   display: block;
-  margin-block-end: 1em;
   --input-height: 1.3125em;
   height: var(--input-height);
 }
 
 .preview {
   padding: 0.25rem;
-  border: solid 1px FieldText;
+  border: solid 1px Field;
+  margin-block: 1em;
 }

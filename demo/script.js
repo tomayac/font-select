@@ -1,7 +1,10 @@
-const fontSelect = document.querySelector('font-select');
-const div = document.querySelector('div');
+;
+const onChange = (e) => {
+  const target = e.target;
+  console.log('🤖 Value changed to', target.value);
+  target.nextElementSibling.style.fontFamily = target.value;
+};
 
-fontSelect.addEventListener('change', () => {
-  console.log('🤖 Value changed to', fontSelect.value);
-  div.style.fontFamily = fontSelect.value;
+document.querySelectorAll('font-select').forEach((fontSelect) => {
+  fontSelect.addEventListener('change', onChange);
 });

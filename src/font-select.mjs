@@ -77,6 +77,10 @@ const GRANTED = 'granted';
 const LOCAL_FONTS = 'local-fonts';
 const TYPE_ERROR = 'TypeError';
 const KEY_DOWN = 'keydown';
+const FALSE_STRING = 'false';
+const TRUE_STRING = 'true';
+
+// ARIA
 const ARIA_EXPANDED = 'aria-expanded';
 const ARIA_SELECTED = 'aria-selected';
 const ARIA_ACTIVEDESCENDENT = 'aria-activedescendant';
@@ -108,7 +112,6 @@ template.innerHTML = `
     :host {
       --input-height: 1.3125em;
       --autocomplete-height: 10em;
-      --element-height: calc(var(--input-height) + var(--autocomplete-height));
 
       height: var(--input-height);
       color-scheme: dark light;
@@ -130,6 +133,7 @@ template.innerHTML = `
       overflow-y: scroll;
       max-height: var(--autocomplete-height);
       border: solid 1px FieldText;
+      z-index: 1;
     }
 
     .variation {
@@ -187,17 +191,6 @@ template.innerHTML = `
       overflow: hidden;
     }
 
-    input::-webkit-search-cancel-button {
-      position:relative;
-      right: -0.25em;
-      appearance: none;
-      width: 0.5em;
-      height: 0.5em;
-      background-image: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><text text-anchor=%22middle%22 fill=%22GrayText%22 x=%225%22 y=%220.5em%22 font-size=%221em%22>⨯</text></svg>");
-      background-size: 0.75em;
-      background-position: center;
-    }
-
     button::before {
       content: "▸";
       color: GrayText;
@@ -212,6 +205,17 @@ template.innerHTML = `
 
     button[aria-expanded=false]::before {
       transform: rotate(90deg);
+    }
+
+    input::-webkit-search-cancel-button {
+      position:relative;
+      right: -0.25em;
+      appearance: none;
+      width: 0.5em;
+      height: 0.5em;
+      background-image: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><text text-anchor=%22middle%22 fill=%22GrayText%22 x=%225%22 y=%220.5em%22 font-size=%221em%22>⨯</text></svg>");
+      background-size: 0.75em;
+      background-position: center;
     }
 
     div[part=wrapper] {
@@ -258,6 +262,7 @@ template.innerHTML = `
     id="autocomplete"
     role="listbox"
     aria-label="${FONT_FAMILIES}"
+    hidden
   ></ul>`;
 
 /**
@@ -292,20 +297,6 @@ export class FontSelect extends HTMLElement {
     installStringReflection(this, VALUE);
 
     this._initializeDOM();
-  }
-
-  /**
-   *
-   *
-   * @param {*} message
-   * @param {string} [event='']
-   * @return {undefined}
-   * @memberof FontSelect
-   */
-  _log(message, event = '') {
-    if (DEBUG) {
-      console.log(message, event);
-    }
   }
 
   /**
@@ -369,14 +360,9 @@ export class FontSelect extends HTMLElement {
     const fontPreviewItems = this._fontPreviewList.querySelectorAll(
       `.${FAMILY}`
     );
-    if (!fontPreviewItems) {
-      return;
-    }
-    this._log('Show');
     this._index = -1;
     const { y } = this.getBoundingClientRect();
     this._fontPreviewList.style.top = `calc(${y}px + var(--input-height))`;
-    this.style.height = 'var(--element-height)';
     this._fontFamilyInput.setAttribute(ARIA_EXPANDED, true);
     this._fontFamilyButton.setAttribute(ARIA_EXPANDED, true);
     this._fontPreviewList.hidden = false;
@@ -392,9 +378,7 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   _hideFontPreview() {
-    this._log('Hide');
     this._index = -1;
-    this.style.height = 'var(--input-height)';
     this._fontFamilyInput.setAttribute(ARIA_EXPANDED, false);
     this._fontFamilyButton.setAttribute(ARIA_EXPANDED, false);
     this._fontPreviewList.hidden = true;
@@ -444,8 +428,7 @@ export class FontSelect extends HTMLElement {
     }
 
     this._fontFamilyButton.addEventListener('click', (e) => {
-      this._log('Font family button', e);
-      if (this._fontFamilyButton.getAttribute(ARIA_EXPANDED) === 'false') {
+      if (this._fontFamilyButton.getAttribute(ARIA_EXPANDED) === FALSE_STRING) {
         this._closedWithButton = false;
         return this._fontFamilyInput.focus();
       }
@@ -454,7 +437,6 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener('focus', async (e) => {
-      this._log('Font family input', e);
       if (await this._requestPermission()) {
         if (!this._closedWithButton) {
           this._closedWithButton = false;
@@ -465,47 +447,62 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener('blur', (e) => {
-      this._log('blur Font family input', e);
       if (!this._hover) {
         this._hideFontPreview();
       }
     });
 
     this._fontPreviewList.addEventListener('pointerdown', (e) => {
-      this._log('Font preview list', e);
-      const clickedFontPreviewItem = e.target;
-      console.log(clickedFontPreviewItem.nodeName);
-      if (clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
+      let clickedFontPreviewItem = e.target;
+      if (
+        clickedFontPreviewItem.nodeName.toLowerCase() !== SPAN &&
+        clickedFontPreviewItem.nodeName.toLowerCase() !== LI &&
+        clickedFontPreviewItem.nodeName.toLowerCase() !== SUMMARY
+      ) {
         return;
       }
-      clickedFontPreviewItem.closest(LI).setAttribute(ARIA_SELECTED, true);
-      const value = clickedFontPreviewItem.textContent;
+      e.preventDefault();
+      if (clickedFontPreviewItem.nodeName.toLowerCase() === SUMMARY) {
+        const details = clickedFontPreviewItem.closest(DETAILS);
+        if (!details) {
+          return;
+        }
+        details.querySelectorAll(LI).forEach((fontFamilyPreviewItem) => {
+          fontFamilyPreviewItem.hidden = false;
+        });
+        return;
+      }
+      clickedFontPreviewItem = clickedFontPreviewItem.closest(LI);
+      clickedFontPreviewItem.setAttribute(ARIA_SELECTED, true);
+      const value = clickedFontPreviewItem.dataset.value;
       this._fontFamilyInput.value = value;
       this.value = value;
       this._hideFontPreview();
     });
 
     this._fontPreviewList.addEventListener('pointerout', (e) => {
-      this._log('Font preview list', e);
       this._hover = false;
     });
 
     this._fontPreviewList.addEventListener('pointerover', (e) => {
-      this._log('Font preview list', e);
       this._hover = true;
-      const hoveredFontPreviewItem = e.target;
-      if (hoveredFontPreviewItem.nodeName.toLowerCase() !== SUMMARY) {
+      let hoveredFontPreviewItem = e.target;
+      if (
+        hoveredFontPreviewItem.nodeName.toLowerCase() !== SUMMARY &&
+        hoveredFontPreviewItem.nodeName.toLowerCase() !== SPAN &&
+        hoveredFontPreviewItem.nodeName.toLowerCase() !== LI
+      ) {
         return;
       }
       const visibleFontPreviewItems = this._getVisibleFontPreviewItems();
       this._fontFamilyInput.removeAttribute(ARIA_ACTIVEDESCENDENT);
+      hoveredFontPreviewItem = hoveredFontPreviewItem.closest(LI);
       visibleFontPreviewItems.forEach((fontPreviewItem, i) => {
-        const summary = fontPreviewItem.querySelector(SUMMARY);
-        if (summary === hoveredFontPreviewItem) {
+        if (fontPreviewItem === hoveredFontPreviewItem) {
           this._index = i;
           this._fontFamilyInput.setAttribute(
             ARIA_ACTIVEDESCENDENT,
-            summary.dataset.fontFamily
+            fontPreviewItem.dataset.value
           );
           return fontPreviewItem.classList.add(HIGHLIGHT);
         }
@@ -514,7 +511,6 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener(KEY_DOWN, (e) => {
-      this._log('Font family input', e);
       const code = e.code;
       const allowed = [
         ARROW_DOWN,
@@ -534,7 +530,7 @@ export class FontSelect extends HTMLElement {
         }
       }
       if (code === ARROW_UP || code === ARROW_DOWN) {
-        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'false') {
+        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === FALSE_STRING) {
           this._index = -1;
           this._showFontPreview();
           this._filterFontPreview(this._fontFamilyInput.value);
@@ -543,7 +539,7 @@ export class FontSelect extends HTMLElement {
       e.preventDefault();
       if (code === ESCAPE) {
         this._fontFamilyInput.focus();
-        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === 'true') {
+        if (this._fontFamilyInput.getAttribute(ARIA_EXPANDED) === TRUE_STRING) {
           return this._hideFontPreview();
         }
         this._fontFamilyInput.value = '';
@@ -624,7 +620,6 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener(INPUT, (e) => {
-      this._log('Font family input', e);
       const value = this._fontFamilyInput.value;
       if (!value) {
         this.value = '';
@@ -634,7 +629,6 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener(CHANGE, (e) => {
-      this._log('Font family input', e);
       const value = this._fontFamilyInput.value;
       if (!Object.keys(fonts).includes(value)) {
         this._fontPreviewList
@@ -729,6 +723,7 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList.style.width = `${inputWidth}px`;
 
     this._fontFamilyInput.disabled = this.disabled ? true : false;
+
     if (this.autofocus) {
       this._fontFamilyInput.blur();
       this._fontFamilyInput.focus();
@@ -745,10 +740,6 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   attributeChangedCallback(name, oldValue, newValue) {
-    this._log(
-      'Attribute changed',
-      `${name}: from "${oldValue}" to "${newValue}"`
-    );
     if (name === AUTOFOCUS) {
       if (this.autofocus) {
         this._fontFamilyInput.focus();
@@ -759,7 +750,6 @@ export class FontSelect extends HTMLElement {
       const customEvent = new CustomEvent(CHANGE, {
         detail: newValue,
       });
-      this._log('Font select', customEvent);
       this.dispatchEvent(customEvent);
     }
   }
