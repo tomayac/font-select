@@ -49,13 +49,11 @@ const installBoolReflection = (obj, attrName, propName = attrName) => {
 
 // Observed attributes
 const AUTOFOCUS = 'autofocus';
-const MULTIPLE = 'multiple';
 const VALUE = 'value';
 const DISABLED = 'disabled';
 
 // UI strings
 const REGULAR = 'Regular';
-const FONT_FAMILY = 'Font Family';
 const FONT_FAMILIES = 'Font Families';
 
 // Other strings
@@ -287,7 +285,7 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   static get observedAttributes() {
-    return [AUTOFOCUS, MULTIPLE, DISABLED, VALUE];
+    return [AUTOFOCUS, DISABLED, VALUE];
   }
 
   /**
@@ -298,7 +296,6 @@ export class FontSelect extends HTMLElement {
     super();
 
     installBoolReflection(this, DISABLED);
-    installBoolReflection(this, MULTIPLE);
     installBoolReflection(this, AUTOFOCUS);
     installStringReflection(this, VALUE);
 
@@ -366,8 +363,10 @@ export class FontSelect extends HTMLElement {
   _showFontPreview() {
     const { x, width, bottom } = this._wrapper.getBoundingClientRect();
     this._fontPreviewList.style.width = `${width}px`;
-    this._fontPreviewList.style.left = `${x}px`;
-    this._fontPreviewList.style.top = `calc(${bottom}px - 1px)`;
+    this._fontPreviewList.style.left = `${window.scrollX + x}px`;
+    this._fontPreviewList.style.top = `calc(${
+      window.scrollY + bottom
+    }px - 1px)`;
     const fontPreviewItems = this._fontPreviewList.querySelectorAll(
       `.${FAMILY}`
     );
@@ -421,6 +420,9 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   _checkFontValue(value) {
+    if (!value) {
+      return true;
+    }
     let valid = false;
     this._fontPreviewList.querySelectorAll(LI).forEach((fontPreviewItem) => {
       if (value === fontPreviewItem.dataset.value) {
@@ -734,15 +736,21 @@ export class FontSelect extends HTMLElement {
 
     this.style.display = 'initial';
 
-    this._fontFamilyInput.disabled = this.disabled ? true : false;
-
     if (this.autofocus) {
       this._fontFamilyInput.blur();
       this._fontFamilyInput.focus();
     }
 
     if (this.value) {
-      this._checkFontValue(this.value);
+      const temp = this.value;
+      this.value = '';
+      this.value = temp;
+    } else {
+      this.value = '';
+    }
+
+    if (this.disabled) {
+      this._fontFamilyInput.disabled = true;
     }
 
     this._shadowRoot.adoptedStyleSheets = [styleSheet];
@@ -757,21 +765,20 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   attributeChangedCallback(name, oldValue, newValue) {
-    console.log('attributeChangedCallback', name, oldValue, newValue)
     if (name === AUTOFOCUS) {
       if (this.autofocus) {
         this._fontFamilyInput.focus();
       }
     } else if (name === DISABLED) {
-      this._fontFamilyInput.disabled = this.disabled;
+      this._fontFamilyInput.disabled = newValue;
     } else if (name === VALUE) {
       if (this._checkFontValue(newValue)) {
-      this._fontFamilyInput.value = newValue;
-      const customEvent = new CustomEvent(CHANGE, {
-        detail: newValue,
-      });
-      this.dispatchEvent(customEvent);
-    }
+        this._fontFamilyInput.value = newValue;
+        const customEvent = new CustomEvent(CHANGE, {
+          detail: newValue,
+        });
+        this.dispatchEvent(customEvent);
+      }
     }
   }
 }

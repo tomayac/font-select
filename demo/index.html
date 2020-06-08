@@ -15,33 +15,42 @@
   </head>
   <body>
     <h1>Font Select Demo</h1>
-    <font-select id="font-select-1" value="Comic Sans MS"></font-select>
-    <label for="font-select-1">Font Select</label>
-    <div class="preview">
-      The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog. The quick brown fox jumps over the lazy dog. The quick
-      brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy
-      dog. The quick brown fox jumps over the lazy dog. The quick brown fox
-      jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The
-      quick brown fox jumps over the lazy dog. The quick brown fox jumps over
-      the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown
-      fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.
-      The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog.
-    </div>
-    <font-select autofocus id="font-select-2"></font-select>
-    <label for="font-select-2">Font Select</label>
-    <div class="preview">
-      The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog. The quick brown fox jumps over the lazy dog. The quick
-      brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy
-      dog. The quick brown fox jumps over the lazy dog. The quick brown fox
-      jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The
-      quick brown fox jumps over the lazy dog. The quick brown fox jumps over
-      the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown
-      fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.
-      The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog.
-    </div>
+    <p>
+      Make sure to set the
+      <code
+        ><a href="chrome://flags/#font-access"
+          >chrome://flags/#font-access</a
+        ></code
+      >
+      🚩 flag.
+    </p>
+
+    <section>
+      <h2>Pre-selected value</h2>
+      <font-select id="font-select-1" value="Comic Sans MS"></font-select>
+      <label for="font-select-1">Font Select</label>
+      <div class="preview">
+        The quick brown fox jumps over the lazy dog. Jackdaws love my big sphinx
+        of quartz. Pack my box with five dozen liquor jugs.
+      </div>
+    </section>
+
+    <section>
+      <h2>Autofocused</h2>
+      <font-select id="font-select-2" autofocus></font-select>
+      <label for="font-select-2">Font Select</label>
+      <div class="preview"></div>
+    </section>
+
+    <section>
+      <h2>Disabled</h2>
+      <font-select id="font-select-3" disabled></font-select>
+      <label for="font-select-3">Font Select</label>
+      <div class="preview"></div>
+    </section>
+    <footer>
+      (&copy; 2020, Google LLC. Created by
+      <a href="https://twitter.com/tomayac">@tomayac</a>.)
+    </footer>
   </body>
 </html>
