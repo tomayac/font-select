@@ -238,6 +238,7 @@ template.innerHTML = `
     }
 
     .highlight {
+      color: HighlightText;
       background-color: Highlight;
     }
   </style>
