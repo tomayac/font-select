@@ -23,12 +23,12 @@
   },
   "homepage": "https://github.com/tomayac/font-select#readme",
   "devDependencies": {
-    "eslint": "^7.2.0",
+    "eslint": "^7.5.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^6.11.0",
     "http-server": "^0.12.3",
     "prettier": "^2.0.5",
-    "terser": "^4.7.0"
+    "terser": "^4.8.0"
   },
   "eslintConfig": {
     "parserOptions": {
