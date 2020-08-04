@@ -15,6 +15,7 @@ const onChange = (e) => {
 };
 
 document.querySelectorAll('font-select').forEach((fontSelect) => {
+  fontSelect.disabled = !('fonts' in navigator);
   fontSelect.insertAdjacentHTML(
     'beforebegin',
     `<pre><code>${fontSelect.outerHTML.replace(/</g, '&lt;')}</code></pre>`
