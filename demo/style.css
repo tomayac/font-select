@@ -1,3 +1,10 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #fff;
+    background-color: #000;
+  }
+}
+
 html {
   display: flex;
   justify-content: center;
