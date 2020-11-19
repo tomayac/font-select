@@ -467,6 +467,9 @@ export class FontSelect extends HTMLElement {
     });
 
     this._fontFamilyInput.addEventListener(FOCUS, async (e) => {
+      if (this.disabled) {
+        return;
+      }
       if (await this._requestPermission()) {
         if (!this._closedWithButton) {
           this._closedWithButton = false;
@@ -660,73 +663,97 @@ export class FontSelect extends HTMLElement {
       this._filterFontPreview(value);
     });
 
-    const fonts = {};
-    const styleSheet = new CSSStyleSheet();
-    for await (const metadata of NAVIGATOR.fonts.query()) {
-      if (!fonts[metadata.family]) {
-        fonts[metadata.family] = [];
+    const _populateFontSelect = async (e) => {
+      if (e instanceof PointerEvent) {
+        this._fontFamilyInput.removeEventListener(INPUT, _populateFontSelect);
+      } else {
+        this._fontFamilyInput.removeEventListener(CLICK, _populateFontSelect);
       }
-      fonts[metadata.family].push(metadata);
-    }
-    Object.keys(fonts)
-      .sort()
-      .forEach((fontFamily) => {
-        const li = DOCUMENT.createElement(LI);
-        li.className = FAMILY;
-        li.dataset.value = fontFamily;
-        const details = DOCUMENT.createElement(DETAILS);
-        details.tabIndex = -1;
-        const summary = DOCUMENT.createElement(SUMMARY);
-        const span = DOCUMENT.createElement(SPAN);
-        summary.append(span);
-        const ul = DOCUMENT.createElement(UL);
-        ul.className = VARIATION;
-        li.role = OPTION;
-        span.textContent = fontFamily;
-        summary.style.fontFamily = fontFamily;
-        details.append(summary);
-        details.append(ul);
-        li.append(details);
-        this._fontPreviewList.append(li);
-        fonts[fontFamily]
-          .map((font) => {
-            // Replace font variation name "Arial" with "Arial Regular".
-            const variationName = font.fullName.replace(fontFamily, '').trim();
-            font.variationName = variationName ? variationName : REGULAR;
-            return font;
-          })
-          .sort((a, b) => {
-            // "Regular" always comes first, else use alphabetic order.
-            if (a.variationName === REGULAR) {
-              return -1;
-            } else if (b.variationName === REGULAR) {
-              return 1;
-            } else if (a.variationName < b.variationName) {
-              return -1;
-            } else if (a.variationName > b.variationName) {
-              return 1;
-            }
-            return 0;
-          })
-          .forEach((font) => {
-            const detailsLi = DOCUMENT.createElement(LI);
-            detailsLi.className = VARIATION;
-            detailsLi.role = OPTION;
-            detailsLi.style.fontFamily = font.fullName;
-            detailsLi.dataset.value = font.fullName;
-            detailsLi.hidden = true;
-            detailsLi.textContent = font.variationName;
-            ul.append(detailsLi);
+      const fonts = {};
+      const styleSheet = new CSSStyleSheet();
+      try {
+        for await (const metadata of NAVIGATOR.fonts.query()) {
+          if (!fonts[metadata.family]) {
+            fonts[metadata.family] = [];
+          }
+          fonts[metadata.family].push(metadata);
+        }
+      } catch (err) {
+        console.warn(err.name, err.message);
+      }
+      Object.keys(fonts)
+        .sort()
+        .forEach((fontFamily, index) => {
+          const li = DOCUMENT.createElement(LI);
+          li.className = FAMILY;
+          li.dataset.value = fontFamily;
+          const details = DOCUMENT.createElement(DETAILS);
+          details.tabIndex = -1;
+          const summary = DOCUMENT.createElement(SUMMARY);
+          const span = DOCUMENT.createElement(SPAN);
+          summary.append(span);
+          const ul = DOCUMENT.createElement(UL);
+          ul.className = VARIATION;
+          li.role = OPTION;
+          span.textContent = fontFamily;
+          summary.style.fontFamily = fontFamily;
+          details.append(summary);
+          details.append(ul);
+          li.append(details);
+          this._fontPreviewList.append(li);
+          fonts[fontFamily]
+            .map((font) => {
+              // Replace font variation name "Arial" with "Arial Regular".
+              const variationName = font.fullName
+                .replace(fontFamily, '')
+                .trim();
+              font.variationName = variationName ? variationName : REGULAR;
+              return font;
+            })
+            .sort((a, b) => {
+              // "Regular" always comes first, else use alphabetic order.
+              if (a.variationName === REGULAR) {
+                return -1;
+              } else if (b.variationName === REGULAR) {
+                return 1;
+              } else if (a.variationName < b.variationName) {
+                return -1;
+              } else if (a.variationName > b.variationName) {
+                return 1;
+              }
+              return 0;
+            })
+            .forEach((font) => {
+              const detailsLi = DOCUMENT.createElement(LI);
+              detailsLi.className = VARIATION;
+              detailsLi.role = OPTION;
+              detailsLi.style.fontFamily = font.fullName;
+              detailsLi.dataset.value = font.fullName;
+              detailsLi.hidden = true;
+              detailsLi.textContent = font.variationName;
+              ul.append(detailsLi);
 
-            styleSheet.insertRule(`
-              @font-face {
-                font-family: '${font.fullName}';
-                src: local('${font.fullName}'),
-                    local('${font.postscriptName}');
-              }`);
-          });
-      });
-    DOCUMENT.adoptedStyleSheets = [...DOCUMENT.adoptedStyleSheets, styleSheet];
+              styleSheet.insertRule(`
+                @font-face {
+                  font-family: '${font.fullName}';
+                  src: local('${font.fullName}'),
+                      local('${font.postscriptName}');
+                }`);
+            });
+        });
+      DOCUMENT.adoptedStyleSheets = [
+        ...DOCUMENT.adoptedStyleSheets,
+        styleSheet,
+      ];
+      this._shadowRoot.adoptedStyleSheets = [styleSheet];
+    };
+
+    this._fontFamilyInput.addEventListener(CLICK, _populateFontSelect, {
+      once: true,
+    });
+    this._fontFamilyInput.addEventListener(INPUT, _populateFontSelect, {
+      once: true,
+    });
 
     const { x, y, width, height } = this._wrapper.getBoundingClientRect();
     const spacer = this._shadowRoot.querySelector('.spacer');
@@ -746,6 +773,7 @@ export class FontSelect extends HTMLElement {
       const temp = this.value;
       this.value = '';
       this.value = temp;
+      this._fontFamilyInput.value = this.value;
     } else {
       this.value = '';
     }
@@ -753,8 +781,6 @@ export class FontSelect extends HTMLElement {
     if (this.disabled) {
       this._fontFamilyInput.disabled = true;
     }
-
-    this._shadowRoot.adoptedStyleSheets = [styleSheet];
   }
 
   /**
