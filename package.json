@@ -1,6 +1,6 @@
 {
   "name": "font-select",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Custom element for picking local fonts",
   "scripts": {
     "start": "npx http-server",

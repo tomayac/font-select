@@ -242,33 +242,34 @@ template.innerHTML = `
       background-color: Highlight;
     }
   </style>
-
-  <div part="font-family">
-    <input
-      part="font-family-input"
-      id="family"
-      type="search"
-      role="combobox"
-      aria-autocomplete="list"
-      aria-expanded="false"
-      aria-controls="autocomplete"
-    >
-    <button
+  <div>
+    <div part="font-family">
+      <input
+        part="font-family-input"
+        id="family"
+        type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="autocomplete"
+      >
+      <button
+        tabindex="-1"
+        aria-label="${FONT_FAMILIES}"
+        aria-expanded="false"
+        aria-controls="autocomplete"
+      ></button>
+    </div>
+    <div class="spacer"></div>
+    <ul
       tabindex="-1"
+      part="font-family-preview"
+      id="autocomplete"
+      role="listbox"
       aria-label="${FONT_FAMILIES}"
-      aria-expanded="false"
-      aria-controls="autocomplete"
-    ></button>
-  </div>
-  <div class="spacer"></div>
-  <ul
-    tabindex="-1"
-    part="font-family-preview"
-    id="autocomplete"
-    role="listbox"
-    aria-label="${FONT_FAMILIES}"
-    hidden
-  ></ul>`;
+      hidden
+    ></ul>
+  </div>`;
 
 /**
  *
