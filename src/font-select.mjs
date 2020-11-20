@@ -171,7 +171,8 @@ template.innerHTML = `
     input {
       height: var(--input-height);
       margin-inline-end: -1px;
-      border-radius: 0;
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
       border-top: 2px inset;
       border-right: none;
       border-bottom: 2px inset;
@@ -190,6 +191,8 @@ template.innerHTML = `
       border-bottom: 2px inset;
       border-left: none;
       border-top: 2px inset;
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
       height: var(--input-height);
       width: var(--input-height);
       overflow: hidden;
@@ -230,7 +233,7 @@ template.innerHTML = `
 
     [part=font-family]:focus-within {
       outline: auto 2px -webkit-focus-ring-color;
-      outline-offset: -2px;
+      outline-offset: -1px;
     }
 
     .spacer {
@@ -363,12 +366,9 @@ export class FontSelect extends HTMLElement {
    * @memberof FontSelect
    */
   _showFontPreview() {
-    const { x, width, bottom } = this._wrapper.getBoundingClientRect();
+    const { width, bottom } = this._wrapper.getBoundingClientRect();
     this._fontPreviewList.style.width = `${width}px`;
-    this._fontPreviewList.style.left = `${window.scrollX + x}px`;
-    this._fontPreviewList.style.top = `calc(${
-      window.scrollY + bottom
-    }px - 1px)`;
+    this._fontPreviewList.style.top = `calc(${window.scrollY + bottom}px)`;
     const fontPreviewItems = this._fontPreviewList.querySelectorAll(
       `.${FAMILY}`
     );

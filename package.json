@@ -1,6 +1,6 @@
 {
   "name": "font-select",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Custom element for picking local fonts",
   "scripts": {
     "start": "npx http-server",
@@ -37,7 +37,7 @@
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^6.15.0",
     "http-server": "^0.12.3",
-    "prettier": "^2.1.2",
+    "prettier": "^2.2.0",
     "shx": "^0.3.3",
     "terser": "^5.5.0"
   },
