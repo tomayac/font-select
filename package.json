@@ -1,6 +1,6 @@
 {
   "name": "font-select",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Custom element for picking local fonts",
   "scripts": {
     "start": "npx http-server",
@@ -10,8 +10,9 @@
     "prepare": "npm run lint && npm run fix && npm run build",
     "fix": "npx prettier --write ."
   },
-  "main": "src/font-select.mjs",
-  "browser": "src/font-select.mjs",
+  "main": "dist/font-select.min.mjs",
+  "browser": "dist/font-select.min.mjs",
+  "exports": "dist/font-select.min.mjs",
   "module": "dist/font-select.min.mjs",
   "unpkg": "dist/font-select.min.mjs",
   "files": [
@@ -33,13 +34,13 @@
   },
   "homepage": "https://github.com/tomayac/font-select#readme",
   "devDependencies": {
-    "eslint": "^7.13.0",
+    "eslint": "^7.15.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-config-prettier": "^6.15.0",
+    "eslint-config-prettier": "^7.0.0",
     "http-server": "^0.12.3",
-    "prettier": "^2.2.0",
+    "prettier": "^2.2.1",
     "shx": "^0.3.3",
-    "terser": "^5.5.0"
+    "terser": "^5.5.1"
   },
   "eslintConfig": {
     "parserOptions": {
