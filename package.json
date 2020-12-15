@@ -1,6 +1,6 @@
 {
   "name": "font-select",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Custom element for picking local fonts",
   "scripts": {
     "start": "npx http-server",
@@ -10,11 +10,11 @@
     "prepare": "npm run lint && npm run fix && npm run build",
     "fix": "npx prettier --write ."
   },
-  "main": "dist/font-select.min.mjs",
-  "browser": "dist/font-select.min.mjs",
-  "exports": "dist/font-select.min.mjs",
-  "module": "dist/font-select.min.mjs",
-  "unpkg": "dist/font-select.min.mjs",
+  "main": "./dist/font-select.min.mjs",
+  "browser": "./dist/font-select.min.mjs",
+  "exports": "./dist/font-select.min.mjs",
+  "module": "./dist/font-select.min.mjs",
+  "unpkg": "./dist/font-select.min.mjs",
   "files": [
     "src",
     "dist"
