@@ -673,7 +673,8 @@ export class FontSelect extends HTMLElement {
       const fonts = {};
       const styleSheet = new CSSStyleSheet();
       try {
-        for await (const metadata of NAVIGATOR.fonts.query()) {
+        const pickedFonts = await NAVIGATOR.fonts.query();
+        for (const metadata of pickedFonts) {
           if (!fonts[metadata.family]) {
             fonts[metadata.family] = [];
           }
