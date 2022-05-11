@@ -98,8 +98,7 @@ const NUMPAD_ENTER = 'NumpadEnter';
 
 // Uglify
 const DOCUMENT = document;
-const NAVIGATOR = navigator;
-const PERMISSIONS = NAVIGATOR.permissions;
+const PERMISSIONS = navigator.permissions;
 
 const template = DOCUMENT.createElement('template');
 // eslint-disable max-len
@@ -454,7 +453,7 @@ export class FontSelect extends HTMLElement {
     this._fontPreviewList = this._shadowRoot.querySelector(UL);
     this._wrapper = this._shadowRoot.querySelector('[part="font-family"]');
 
-    if (!('fonts' in NAVIGATOR)) {
+    if (!('queryLocalFonts' in self)) {
       return;
     }
 
@@ -673,7 +672,7 @@ export class FontSelect extends HTMLElement {
       const fonts = {};
       const styleSheet = new CSSStyleSheet();
       try {
-        const pickedFonts = await NAVIGATOR.fonts.query();
+        const pickedFonts = await queryLocalFonts();
         for (const metadata of pickedFonts) {
           if (!fonts[metadata.family]) {
             fonts[metadata.family] = [];
