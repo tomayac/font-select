@@ -669,20 +669,20 @@ export class FontSelect extends HTMLElement {
       } else {
         this._fontFamilyInput.removeEventListener(CLICK, _populateFontSelect);
       }
-      const fonts = {};
+      this.fonts = {};
       const styleSheet = new CSSStyleSheet();
       try {
         const pickedFonts = await queryLocalFonts();
         for (const metadata of pickedFonts) {
-          if (!fonts[metadata.family]) {
-            fonts[metadata.family] = [];
+          if (!this.fonts[metadata.family]) {
+            this.fonts[metadata.family] = [];
           }
-          fonts[metadata.family].push(metadata);
+          this.fonts[metadata.family].push(metadata);
         }
       } catch (err) {
         console.warn(err.name, err.message);
       }
-      Object.keys(fonts)
+      Object.keys(this.fonts)
         .sort()
         .forEach((fontFamily, index) => {
           const li = DOCUMENT.createElement(LI);
@@ -702,7 +702,7 @@ export class FontSelect extends HTMLElement {
           details.append(ul);
           li.append(details);
           this._fontPreviewList.append(li);
-          fonts[fontFamily]
+          this.fonts[fontFamily]
             .map((font) => {
               // Replace font variation name "Arial" with "Arial Regular".
               const variationName = font.fullName
@@ -803,7 +803,7 @@ export class FontSelect extends HTMLElement {
       if (this._checkFontValue(newValue)) {
         this._fontFamilyInput.value = newValue;
         const customEvent = new CustomEvent(CHANGE, {
-          detail: newValue,
+          detail: this.fonts[newValue],
         });
         this.dispatchEvent(customEvent);
       }
