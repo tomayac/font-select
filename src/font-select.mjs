@@ -672,8 +672,9 @@ export class FontSelect extends HTMLElement {
       this.fonts = {};
       const styleSheet = new CSSStyleSheet();
       try {
-        const pickedFonts = await queryLocalFonts();
-        for (const metadata of pickedFonts) {
+        const availableFonts = await queryLocalFonts();
+        this._fonts = availableFonts;
+        for (const metadata of availableFonts) {
           if (!this.fonts[metadata.family]) {
             this.fonts[metadata.family] = [];
           }
@@ -803,7 +804,11 @@ export class FontSelect extends HTMLElement {
       if (this._checkFontValue(newValue)) {
         this._fontFamilyInput.value = newValue;
         const customEvent = new CustomEvent(CHANGE, {
-          detail: this.fonts[newValue],
+          // If a variant is selected, return just that.
+          // Else if a family is selected, return all variants.
+          detail:
+            this._fonts.find((font) => font.fullName === newValue) ||
+            this.fonts[newValue],
         });
         this.dispatchEvent(customEvent);
       }

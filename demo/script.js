@@ -10,7 +10,10 @@
 
 const onChange = (e) => {
   const target = e.target;
-  console.log(`🤖 ${target.id}: Value changed to "${target.value}". Matching fontdata:`, e.detail);
+  console.log(
+    `🤖 ${target.id}: Value changed to "${target.value}". Matching fontdata:`,
+    e.detail
+  );
   target.parentNode.querySelector('.preview').style.fontFamily = target.value;
 };
 
